@@ -10,9 +10,15 @@
 -author("KamikazeOnRoad").
 
 %% API
--export([swap/3, getSectorArray/3, pickRandomIndex/1, pickRandomIndex/3, pickRandomElem/1, pickRandomElem/3, getIndex/2, deleteA/2, getMinimum/1]).
+-export([compare/2, swap/3, getSectorArray/3, pickRandomIndex/1, pickRandomIndex/3, pickRandomElem/1, pickRandomElem/3, getIndex/2, deleteA/2, getMinimum/1]).
 -import(arrayS, [initA/0, setA/3, getA/2, lengthA/1]).
 -import(liste, [delete/2]).
+
+%% Compares two numbers
+compare(Same, Same) -> 0;
+compare(First, Second) when First > Second -> 1;
+compare(First, Second) when First < Second -> -1.
+
 
 %% Swaps 2 elements at specified indices in array and returns array
 swap({}, _, _) -> {};

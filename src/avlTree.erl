@@ -7,10 +7,13 @@
 %%% Created : 16. Jan 2015 01:46
 %%%-------------------------------------------------------------------
 -module(avlTree).
--author("KamikazeOnRoad").
+-author("").
 
 %% API
--export([intitTree/0, addToTree/2, isBalanced/1]).
+%% -export([print_helloworld/0]).
+-export([print_helloworld/0, intitTree/0, addToTree/2, isBalanced/1, balance_/1]).
+print_helloworld() ->
+  io:format("hallo world ~n").
 
 %% leftChild(P) rightChild(P)
 
@@ -49,22 +52,26 @@ initNode(Number) -> [1, 1, Number, nil, nil].
 addToTree(Number, [0, 0, nil, nil, nil]) -> [1, 1, Number, nil, nil];
 
 addToTree(Number, [HeightLeft, HeightRight, Parent, nil, nil]) when Number < Parent ->
-  balance([HeightLeft + 1, HeightRight, Parent, initNode(Number), nil]);
+  [HeightLeft + 1, HeightRight, Parent, initNode(Number), nil];
 
 addToTree(Number, [HeightLeft, HeightRight, Parent, nil, nil]) when Number >= Parent ->
-  balance([HeightLeft, HeightRight + 1, Parent, nil, initNode(Number)]);
+  [HeightLeft, HeightRight + 1, Parent, nil, initNode(Number)];
 
 addToTree(Number, [HeightLeft, HeightRight, Parent, nil, ChildRight]) when Number < Parent ->
-  balance([HeightLeft + 1, HeightRight, Parent, initNode(Number), ChildRight]);
+  [HeightLeft + 1, HeightRight, Parent, initNode(Number), ChildRight];
 
 addToTree(Number, [HeightLeft, HeightRight, Parent, ChildLeft, nil]) when Number >= Parent ->
-  balance([HeightLeft, HeightRight + 1, Parent, ChildLeft, initNode(Number)]);
+  [HeightLeft, HeightRight + 1, Parent, ChildLeft, initNode(Number)];
 
 addToTree(Number, [HeightLeft, HeightRight, Parent, ChildLeft, ChildRight]) when Number < Parent ->
-  [HeightLeft + 1, HeightRight, Parent, addToTree(Number, ChildLeft), ChildRight];
+  Tree = [HeightLeft , HeightRight, Parent, addToTree(Number, ChildLeft), ChildRight],
+  NewTree = balance_(Tree),
+  NewTree;
 
 addToTree(Number, [HeightLeft, HeightRight, Parent, ChildLeft, ChildRight]) when Number >= Parent ->
-  [HeightLeft, HeightRight + 1, Parent, ChildLeft, addToTree(Number, ChildRight)].
+  Tree = [HeightLeft, HeightRight , Parent, ChildLeft, addToTree(Number, ChildRight)],
+  NewTree =  balance_(Tree),
+  NewTree.
 
 
 
@@ -88,6 +95,46 @@ balance([HeightLeft, HeightRight, Parent, ChildLeft, nil]) ->
   end;
 balance([HeightLeft, HeightRight, Parent, ChildLeft, ChildRight]) ->
   [HeightLeft, HeightRight, Parent, balance(ChildLeft), balance(ChildRight)].
+
+
+
+
+balance_([Height, Height, Parent, nil, nil]) -> [Height, Height, Parent, nil, nil];
+
+balance_([HeightLeft, HeightRight, Parent, nil, ChildRight]) when ChildRight /= nil->
+  NewChildRight = balance_(ChildRight),
+  Tree = [HeightLeft, HeightRight, Parent, nil, NewChildRight],
+  Difference = HeightRight - HeightLeft,
+  if
+    Difference < -1 -> BalancedTree = rotateRight(Tree);
+%%     Difference > 1 -> BalancedTree = rotateLeft(Tree);
+    true -> BalancedTree = Tree
+  end,
+  BalancedTree;
+
+balance_([HeightLeft, HeightRight, Parent, ChildLeft, nil]) when ChildLeft /= nil->
+  NewChildLeft = balance_(ChildLeft),
+  Tree = [HeightLeft, HeightRight, Parent, NewChildLeft, nil],
+%%   io:format(Tree),
+  Difference = HeightRight - HeightLeft,
+  if
+    Difference < -1 -> BalancedTree = rotateRight(Tree);
+    Difference > 1 -> BalancedTree = rotateLeft(Tree);
+    true -> BalancedTree = Tree
+  end,
+  BalancedTree;
+
+balance_([HeightLeft, HeightRight, Parent, ChildLeft, ChildRight]) ->
+   Difference = HeightRight - HeightLeft,
+   NewChildLeft = balance_(ChildLeft),
+   NewChildRight = balance_(ChildRight),
+   Tree = [HeightLeft, HeightRight, Parent, NewChildLeft, NewChildRight],
+    if
+      Difference < -1 -> BalancedTree = rotateRight(Tree);
+      Difference > 1 -> BalancedTree = rotateLeft(Tree);
+      true -> BalancedTree = Tree
+    end,
+  BalancedTree.
 
 
 
@@ -116,3 +163,9 @@ isBalanced([HeightLeft, HeightRight, _, ChildLeft, ChildRight]) ->
   end.
 
 %%isUnbalanced(Tree) -> not(isBalanced(Tree)).
+
+
+rotateRight([HeightLeft, HeightRight, Parent, [ChildHeightLeft, ChildHeightRight, ChildParent, ChildChildLeft, ChildChildRight], ChildRight]) ->
+  [ChildHeightLeft, ChildHeightRight+1, ChildParent, ChildChildLeft, [HeightLeft-2, HeightRight, Parent, ChildChildRight, ChildRight]].
+
+rotateLeft(_Tree)-> true.

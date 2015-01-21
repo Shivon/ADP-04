@@ -1,3 +1,6 @@
 /.idea*
 /ADP-04.iml
 /out*
+/src/Example.erl
+/src/avlTestWithoutHeight.erl
+/src/avlTreeFirstTry.erl

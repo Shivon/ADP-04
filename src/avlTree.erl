@@ -4,115 +4,152 @@
 %%% @doc
 %%%
 %%% @end
-%%% Created : 16. Jan 2015 01:46
 %%%-------------------------------------------------------------------
 -module(avlTree).
 -author("KamikazeOnRoad").
 
 %% API
--export([intitTree/0, addToTree/2, isBalanced/1]).
-
-%% leftChild(P) rightChild(P)
-
-%% {number, height, bigger, smaller}
-%%                    |
-%%                {muber, height, bigger, smaller}
-%% leave when bigger and smaller =:= nil.
-
-%% intitTree() -> {nil, 0, nil, nil}.
-%% initNode(Number) -> {Number, 1, nil, nil}.
-%%
-%% %% Empty tree => height = 0,
-%% %% Tree with only root => height = 1
-%% addToTree(Number, {nil, 0, nil, nil}) -> {Number, 1, nil, nil};
-%% addToTree(Number, {Parent, Height, nil, nil}) when Number < Parent ->
-%%     {Parent, Height + 1, initNode(Number), nil};
-%% addToTree(Number, {Parent, Height, nil, nil}) when Number >= Parent ->
-%%     {Parent, Height + 1, nil, initNode(Number)};
-%% addToTree(Number, {Parent, Height, nil, Child2}) when Number < Parent ->
-%%     {Parent, Height, initNode(Number), Child2};
-%% addToTree(Number, {Parent, Height, Child1, nil}) when Number >= Parent ->
-%%     {Parent, Height, Child1, initNode(Number)};
-%% %% TODO balance!!
-%% addToTree(Number, {Parent, Height, Child1, Child2}) when Number < Parent ->
-%%     {Parent, Height + 1, addToTree(Number, Child1), Child2};
-%% addToTree(Number, {Parent, Height, Child1, Child2}) when Number >= Parent ->
-%%     {Parent, Height + 1, Child1, addToTree(Number, Child2)}.
-
-
-%% [Depth Left, Depth Right, Number, ChildLeft, ChildRight]
-intitTree() -> [0, 0, nil, nil, nil].
-initNode(Number) -> [1, 1, Number, nil, nil].
-
-%% Empty tree => HeightLeft and HeightRight = 0,
-%% Tree with only root => HeightLeft and HeightRight = 1
-addToTree(Number, [0, 0, nil, nil, nil]) -> [1, 1, Number, nil, nil];
-
-addToTree(Number, [HeightLeft, HeightRight, Parent, nil, nil]) when Number < Parent ->
-  balance([HeightLeft + 1, HeightRight, Parent, initNode(Number), nil]);
-
-addToTree(Number, [HeightLeft, HeightRight, Parent, nil, nil]) when Number >= Parent ->
-  balance([HeightLeft, HeightRight + 1, Parent, nil, initNode(Number)]);
-
-addToTree(Number, [HeightLeft, HeightRight, Parent, nil, ChildRight]) when Number < Parent ->
-  balance([HeightLeft + 1, HeightRight, Parent, initNode(Number), ChildRight]);
-
-addToTree(Number, [HeightLeft, HeightRight, Parent, ChildLeft, nil]) when Number >= Parent ->
-  balance([HeightLeft, HeightRight + 1, Parent, ChildLeft, initNode(Number)]);
-
-addToTree(Number, [HeightLeft, HeightRight, Parent, ChildLeft, ChildRight]) when Number < Parent ->
-  [HeightLeft + 1, HeightRight, Parent, addToTree(Number, ChildLeft), ChildRight];
-
-addToTree(Number, [HeightLeft, HeightRight, Parent, ChildLeft, ChildRight]) when Number >= Parent ->
-  [HeightLeft, HeightRight + 1, Parent, ChildLeft, addToTree(Number, ChildRight)].
+-export([initTree/0, initNode/1, addNode/2, deleteNode/2, getHeight/1, getNode/2]).
 
 
 
-%% Checks if tree is balanced and rotates if it isnt
-balance([Height, Height, Parent, nil, nil]) -> [Height, Height, Parent, nil, nil];
-balance([HeightLeft, HeightRight, Parent, nil, ChildRight]) ->
-  Tree = [HeightLeft, HeightRight, Parent, nil, ChildRight],
-  Difference = HeightRight - HeightLeft,
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Initialization
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Init empty tree
+initTree() -> {}.
+%% Init node with pattern {{Parent, Height}, {ChildLeft, Height}, {ChildRight, Height}}
+initNode(Number) -> {{Number,1}, {}, {}}.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Add nodes
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Add node to empty tree
+addNode(Number, {}) -> initNode(Number);
+%% Add node to existing tree
+%% Numbers >= parent always are settled on right side for initialization
+addNode(Number, {{Parent, Height}, {}, {}}) when Number < Parent -> 
+  {{Parent, Height+1}, initNode(Number), {}};
+
+addNode(Number, {{Parent, Height}, {}, {}}) when Number >= Parent -> 
+  {{Parent, Height+1}, {}, initNode(Number)};
+
+addNode(Number, {{Parent, Height}, {}, ChildRight}) when Number < Parent ->
+  {{Parent, Height}, initNode(Number), ChildRight};
+
+addNode(Number, {{Parent, Height}, ChildLeft, {}}) when Number >= Parent ->
+  {{Parent, Height}, ChildLeft, initNode(Number)};
+
+%% TODO CHECK if works !!!
+addNode(Number, {Parent, ChildLeft, ChildRight}) ->
+  
+  %% Tree maybe comes back unbalanced from recursion
   if
-    Difference < -1 -> rotateRight(Tree);
-    Difference > 1 -> rotateLeft(Tree);
-    true -> balance(ChildRight)
-  end;
-balance([HeightLeft, HeightRight, Parent, ChildLeft, nil]) ->
-  Tree = [HeightLeft, HeightRight, Parent, ChildLeft, nil],
-  Difference = HeightRight - HeightLeft,
-  if
-    Difference < -1 -> rotateRight(Tree);
-    Difference > 1 -> rotateLeft(Tree);
-    true -> balance(ChildLeft)
-  end;
-balance([HeightLeft, HeightRight, Parent, ChildLeft, ChildRight]) ->
-  [HeightLeft, HeightRight, Parent, balance(ChildLeft), balance(ChildRight)].
+    Number < Parent -> UnbalancedTree = {Parent, addNode(Number, ChildLeft), ChildRight};
+    Number >= Parent -> UnbalancedTree = {Parent, ChildLeft, addNode(Number, ChildRight)}
+  end,
 
-
-
-%% Prädikat
-isBalanced([Height, Height, _, nil, nil]) -> true;
-isBalanced([HeightLeft, HeightRight, _, nil, ChildRight]) ->
-    Difference = HeightRight - HeightLeft,
-    if
-      Difference < -1 -> false;
-      Difference > 1 -> false;
-      true -> isBalanced(ChildRight)
-    end;
-isBalanced([HeightLeft, HeightRight, _, ChildLeft, nil]) ->
-  Difference = HeightRight - HeightLeft,
+  %% Checking for balance with HeightLeft - HeightRight
+  %% Balanced: -1 || 0 || 1
+  %% Unbalanced: -2 || 2
+  DiffHeight = getDiffHeight(UnbalancedTree),
   if
-    Difference < -1 -> false;
-    Difference > 1 -> false;
-    true -> isBalanced(ChildLeft)
-  end;
-isBalanced([HeightLeft, HeightRight, _, ChildLeft, ChildRight]) ->
-  Difference = HeightRight - HeightLeft,
-  if
-    Difference < -1 -> false;
-    Difference > 1 -> false;
-    true -> isBalanced(ChildLeft) and isBalanced(ChildRight)
+    %% Tree is still balanced
+    (DiffHeight == 0) or (DiffHeight == -1) or (DiffHeight == 1) -> UnbalancedTree;
+    
+    %% Tree needs left or doubleLeft rotation
+    DiffHeight =< -2 ->
+      CurrChildRight = getNode(UnbalancedTree, right),
+      DiffHeightRight = getDiffHeight(CurrChildRight),
+      if
+        DiffHeightRight < 0 -> rotateLeft(UnbalancedTree);
+        DiffHeightRight > 0 -> doubleRotateLeft(UnbalancedTree)
+      end;
+    
+    %% Tree needs right or doubleRight rotation
+    DiffHeight >= 2 ->
+      CurrChildLeft = getNode(UnbalancedTree, left),
+      DiffHeightLeft = getDiffHeight(CurrChildLeft),
+      if
+        DiffHeightLeft > 0 -> rotateRight(UnbalancedTree);
+        DiffHeightLeft < 0 -> doubleRotateRight(UnbalancedTree)
+      end
   end.
 
-%%isUnbalanced(Tree) -> not(isBalanced(Tree)).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Delete nodes
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Delete node when only node itself is in tree
+deleteNode(Number, {{Number, 1}, {}, {}}) -> {};
+
+%% Delete node when node is only child
+deleteNode(Number, {{Parent, 2}, {{Number, 1}, {}, {}}, {}}) ->
+  {{Parent, 1}, {}, {}};
+deleteNode(Number, {{Parent, 2}, {}, {{Number, 1}, {}, {}}}) ->
+  {{Parent, 1}, {}, {}};
+
+%% Delete node when node is one of the only two leaves 
+deleteNode(Number, {{Parent, 2}, {{Number, 1}, {}, {}}, ChildRight}) ->
+  {{Parent, 2}, {}, ChildRight};
+deleteNode(Number, {{Parent, 2}, ChildLeft, {{Number, 1}, {}, {}}}) ->
+  {{Parent, 2}, ChildLeft, {}}.
+%% TODO delete nodes and balance when deeper AND when root or similar is going to be deleted
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Rotations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% TODO check if height update works correctly
+rotateLeft({{P1, _}, CL1, {P2, CL2, {P3, CL3, CR3}}}) ->
+  %% Update height P1 (all others remain the same)
+  HeightCL1 = getHeight(CL1),
+  {P2, {{P1, HeightCL1+1}, CL1, CL2}, {P3, CL3, CR3}}.
+
+rotateRight({{P1, _}, {P2, {P3, CL3, CR3}, CR2}, CR1}) ->
+  %% Update height P1 (all others remain the same)
+  HeightCR1 = getHeight(CR1),
+  {P2, {P3, CL3, CR3}, {{P1, HeightCR1+1}, CR2, CR1}}.
+
+doubleRotateLeft({P1, nil, {P2, {P3, nil, nil}, nil}}) ->
+  FirstRotated = {P1, nil, {P3, nil, {P2, nil, nil}}},
+  rotateLeft(FirstRotated);
+doubleRotateLeft({P1, CL1, {P2, CL2, CR3}}) ->
+  FirstRotated = {P1, CL1, rotateRight({P2, CL2, CR3})},
+  rotateLeft(FirstRotated).
+
+doubleRotateRight({P1, {P2, nil, {P3, nil, nil}}, nil}) ->
+  FirstRotated = {P1, {P3, {P2, nil, nil}, nil}, nil},
+  rotateRight(FirstRotated);
+doubleRotateRight({P1, {P2, CL2, CR2}, CR1}) ->
+  FirstRotated = {P1, rotateLeft({P2, CL2, CR2}), CR1},
+  rotateRight(FirstRotated).
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Helper
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Get height from one specific node
+getHeight({}) -> 0;
+getHeight({{_, H}, _, _}) -> H.
+
+%% Get left or right node from tree
+getNode({_, CL, _}, left) -> CL;
+getNode({_, _, CR}, right) -> CR.
+
+%% Get difference in height for balance
+getDiffHeight({}) -> 0;
+getDiffHeight(Tree) ->
+  %% Checking for balance with HeightLeft - HeightRight
+  %% Balanced: -1 || 0 || 1
+  %% Unbalanced: -2 || 2
+  getHeight(getNode(Tree, left)) - getHeight(getNode(Tree, right)).

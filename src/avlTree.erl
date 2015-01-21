@@ -18,7 +18,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Init empty tree
-initTree() -> {}.
+initTree() ->  {}.
 %% Init node with pattern {{Parent, Height}, {ChildLeft, Height}, {ChildRight, Height}}
 initNode(Number) -> {{Number,1}, {}, {}}.
 
@@ -32,7 +32,7 @@ initNode(Number) -> {{Number,1}, {}, {}}.
 addNode(Number, {}) -> initNode(Number);
 %% Add node to existing tree
 %% Numbers >= parent always are settled on right side for initialization
-addNode(Number, {{Parent, Height}, {}, {}}) when Number < Parent -> 
+addNode(Number, {{Parent, Height}, {}, {}}) when Number < Parent ->
   {{Parent, Height+1}, initNode(Number), {}};
 
 addNode(Number, {{Parent, Height}, {}, {}}) when Number >= Parent -> 
@@ -53,6 +53,7 @@ addNode(Number, {Parent, ChildLeft, ChildRight}) ->
     Number >= Parent -> UnbalancedTree = {Parent, ChildLeft, addNode(Number, ChildRight)}
   end,
 
+  erlang:display(UnbalancedTree),
   %% Checking for balance with HeightLeft - HeightRight
   %% Balanced: -1 || 0 || 1
   %% Unbalanced: -2 || 2
@@ -95,7 +96,12 @@ deleteNode(Number, {{Parent, 2}, {{Number, 1}, {}, {}}, {}}) ->
 deleteNode(Number, {{Parent, 2}, {}, {{Number, 1}, {}, {}}}) ->
   {{Parent, 1}, {}, {}};
 
-%% Delete node when node is one of the only two leaves 
+%% Delete node when node is one of the only two leaves  
+
+%% TODO unnötige Fallunterscheidung, abstrahieren!! 3 fälle (blatt, halbwurzel, wurzel)
+%% suchen und finden vllt besser trennen
+%% beim runterlaufen für Min/ Max kopieren und ggf direkt löschen:
+%% 2 möglichkeiten hier: blatt oder halbwurzel
 deleteNode(Number, {{Parent, 2}, {{Number, 1}, {}, {}}, ChildRight}) ->
   {{Parent, 2}, {}, ChildRight};
 deleteNode(Number, {{Parent, 2}, ChildLeft, {{Number, 1}, {}, {}}}) ->
@@ -108,28 +114,24 @@ deleteNode(Number, {{Parent, 2}, ChildLeft, {{Number, 1}, {}, {}}}) ->
 %% Rotations
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% TODO check if height update works correctly
-rotateLeft({{P1, _}, CL1, {P2, CL2, {P3, CL3, CR3}}}) ->
-  %% Update height P1 (all others remain the same)
-  HeightCL1 = getHeight(CL1),
-  {P2, {{P1, HeightCL1+1}, CL1, CL2}, {P3, CL3, CR3}}.
+rotateLeft({{P1, _}, CL1, {{P2, _}, CL2, CR2}}) ->
+  %% Update height P1 and P2 (all others remain the same)
+  HeightP1 = erlang:max(getHeight(CL1), getHeight(CL2)) + 1,
+  HeightP2 = erlang:max(getHeight(CR2), HeightP1) + 1,
+  {{P2, HeightP2}, {{P1, HeightP1}, CL1, CL2}, CR2}.
 
-rotateRight({{P1, _}, {P2, {P3, CL3, CR3}, CR2}, CR1}) ->
-  %% Update height P1 (all others remain the same)
-  HeightCR1 = getHeight(CR1),
-  {P2, {P3, CL3, CR3}, {{P1, HeightCR1+1}, CR2, CR1}}.
+rotateRight({{P1, _}, {{P2, _}, CL2, CR2}, CR1}) ->
+  %% Update height P1 and P2 (all others remain the same)
+  HeightP1 = erlang:max(getHeight(CR1), getHeight(CR2)) + 1,
+  HeightP2 = erlang:max(getHeight(CL2), HeightP1) + 1,
+  {{P2, HeightP2}, CL2, {{P1, HeightP1}, CR2, CR1}}.
 
-doubleRotateLeft({P1, nil, {P2, {P3, nil, nil}, nil}}) ->
-  FirstRotated = {P1, nil, {P3, nil, {P2, nil, nil}}},
-  rotateLeft(FirstRotated);
-doubleRotateLeft({P1, CL1, {P2, CL2, CR3}}) ->
-  FirstRotated = {P1, CL1, rotateRight({P2, CL2, CR3})},
+doubleRotateLeft({P1, CL1, CR1}) ->
+  FirstRotated = {P1, CL1, rotateRight(CR1)},
   rotateLeft(FirstRotated).
 
-doubleRotateRight({P1, {P2, nil, {P3, nil, nil}}, nil}) ->
-  FirstRotated = {P1, {P3, {P2, nil, nil}, nil}, nil},
-  rotateRight(FirstRotated);
-doubleRotateRight({P1, {P2, CL2, CR2}, CR1}) ->
-  FirstRotated = {P1, rotateLeft({P2, CL2, CR2}), CR1},
+doubleRotateRight({P1, CL1, CR1}) ->
+  FirstRotated = {P1, rotateLeft(CL1), CR1},
   rotateRight(FirstRotated).
 
 

@@ -16,7 +16,7 @@
 
 %% {number, height, bigger, smaller}
 %%                    |
-%%                {muber, height, bigger, smaller}
+%%                {number, height, bigger, smaller}
 %% leave when bigger and smaller =:= nil.
 
 %% intitTree() -> {nil, 0, nil, nil}.

@@ -1,4 +1,5 @@
 /.idea*
 /ADP-04.iml
 /out*
-/src/nevermind/*
+/nevermindOldCode/*
+/zahlen.dat

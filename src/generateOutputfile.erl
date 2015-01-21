@@ -3,54 +3,57 @@
 -author("AD").
 
 %% API
--export([writeNodeToFile/3, writeleftChild/2, writerightChild/2,  writeDigraph/0, writeEOF/0]).
+-export([ writeToFile/1, writeDigraph/0, writeEOF/0, writeSingleToFile/1]).
 
 %%-import().
 %% logFile() -> "\beispiel.dot".
 %% logFile() -> "\messung.log".
-logFile() -> "\mbeispiel.dot".
+logFile() -> "\avl1.dot".
 
 
 %% Writes topic into "\mbeispiel.dot"
 %% digraph g {
 %%  node [shape = record,height=.1];
 writeDigraph() ->
-  file:write_file(logFile(), io_lib:fwrite("digraph g { \n node [shape = record, height=.1]; \n", []), [append]).
+  file:write_file(logFile(), io_lib:fwrite("digraph avltree {  \n", []), [append]).
 
-%% Writes  into "\mbeispiel.dot"
-writeNodeToFile(Node, WeightLeft, Weightright) ->
-  file:write_file(logFile(), io_lib:fwrite("node~p[label = \"<f0> ~p |<f1> ~p |<f2> ~p\"] \n",   [Node, WeightLeft, Node, Weightright]), [append]).
+writeToFile({{_Parent, 1}, _ChildLeft, _ChildRight}) ->
+  ok;
+
+writeToFile({{Parent, _Height}, {}, ChildRight}) ->
+  {{CR1, HR1},_,_} = ChildRight,
+  file:write_file(logFile(), io_lib:fwrite("~p -> ~p [label = ~p];  \n",   [Parent, CR1, HR1+1]), [append]),
+  writeToFile(ChildRight);
+
+writeToFile({{Parent, _Height}, ChildLeft, {}}) ->
+  {{CL1, HL1},_,_} = ChildLeft,
+  file:write_file(logFile(), io_lib:fwrite("~p -> ~p [label = ~p];  \n",   [Parent, CL1, HL1+1]), [append]),
+  writeToFile(ChildLeft);
 
 %% Writes the left Child of a Parent to "\mbeispiel.dot"
-writeleftChild(Parent, ChildLeft ) ->
-  file:write_file(logFile(), io_lib:fwrite(" \"node~p\":f0 -> \"node~p\":f1 ; \t \n",   [Parent, ChildLeft]), [append]).
+writeToFile({{Parent, _Height}, ChildLeft, ChildRight} ) ->
+  {{CL1, HL1},_,_} = ChildLeft,
+  {{CR1, HR1},_,_} = ChildRight,
+  file:write_file(logFile(), io_lib:fwrite("~p -> ~p [label = ~p];  \n",   [Parent, CL1, HL1+1]), [append]),
+  file:write_file(logFile(), io_lib:fwrite("~p -> ~p [label = ~p];  \n",   [Parent, CR1, HR1+1]), [append]),
+  writeToFile(ChildLeft),
+  writeToFile(ChildRight).
 
-%% Writes the right Child of a Parent to "\mbeispiel.dot"
-writerightChild(Parent, ChildRight ) ->
-  file:write_file(logFile(), io_lib:fwrite(" \"node~p\":f2 -> \"node~p\":f1 ; \t \n",   [Parent, ChildRight]), [append]).
+writeSingleToFile(Parent) ->
+  file:write_file(logFile(), io_lib:fwrite("~p  \n",   [Parent]), [append]).
 
 writeEOF() ->
   file:write_file(logFile(), io_lib:fwrite(" } \n", []), [append]).
 
-%%
-%%digraph g {
-%% node [shape = record,height=.1];
-%% node0[label = "<f0>3 |<f1> 8|<f2> "];
-%% node1[label = "<f0> |<f1> 5 |<f2> "];
-%% node2[label = "<f0> |<f1> 3|<f2> "];
-%% node3[label = "<f0> |<f1> 6|<f2> "];
-%% node4[label = "<f0> |<f1>12|<f2> "];
-%% node5[label = "<f0> |<f1> 11|<f2> "];
-%% node6[label = "<f0> |<f1> 15|<f2> "];
-%% node7[label = "<f0> |<f1> 1|<f2> "];
-%% node8[label = "<f0> |<f1> 4|<f2> "];
-%% "node0":f2 -> "node4":f1 ;
-%% "node0":f0 -> "node1":f1;
-%% "node1":f0 -> "node2":f1;
-%% "node1":f2 -> "node3":f1;
-%% "node2":f2 -> "node8":f1;
-%% "node2":f0 -> "node7":f1;
-%% "node4":f2 -> "node6":f1;
-%% "node4":f0 -> "node5":f1;
-%%
+%% digraph avltree
+%% {
+%% 6 -> 2 [label = 3];
+%% 6 -> 8 [label = 2];
+%% 2 -> 1 [label = 2];
+%% 2 -> 4 [label = 2];
+%% 1 -> 0 [label = 1];
+%% 4 -> 3 [label = 1];
+%% 4 -> 5 [label = 1];
+%% 8 -> 7 [label = 1];
+%% 8 -> 9 [label = 1];
 %% }

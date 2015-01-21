@@ -9,7 +9,7 @@
 -author("KamikazeOnRoad").
 
 %% API
--export([initTree/0, initNode/1, addNode/2, deleteNode/2, getHeight/1, getNode/2]).
+-export([initTree/0, initNode/1, addNode/2, deleteNode/2, getHeight/1, getNode/2, getMinOfChildRight/1]).
 
 
 
@@ -114,7 +114,11 @@ deleteNode(Number, {{Parent, 2}, ChildLeft, {{Number, 1}, {}, {}}}) ->
   {{Parent, 2}, ChildLeft, {}}.
 %% TODO delete nodes and balance when deeper AND when root or similar is going to be deleted
 
+getMinOfChildRight({{Parent, _Height}, {}, _ChildRight}) ->
+  Parent;
 
+getMinOfChildRight({_Parent, ChildLeft, _ChildRight}) ->
+  getMinOfChildRight(ChildLeft).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Rotations

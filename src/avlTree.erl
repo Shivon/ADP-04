@@ -45,15 +45,14 @@ addNode(Number, {{Parent, Height}, ChildLeft, {}}) when Number >= Parent ->
   {{Parent, Height}, ChildLeft, initNode(Number)};
 
 %% TODO CHECK if works !!!
-addNode(Number, {Parent, ChildLeft, ChildRight}) ->
-  
+addNode(Number, {{Parent, Height}, ChildLeft, ChildRight}) ->
+
   %% Tree maybe comes back unbalanced from recursion
   if
-    Number < Parent -> UnbalancedTree = {Parent, addNode(Number, ChildLeft), ChildRight};
-    Number >= Parent -> UnbalancedTree = {Parent, ChildLeft, addNode(Number, ChildRight)}
+    Number < Parent -> UnbalancedTree = {{Parent, Height}, addNode(Number, ChildLeft), ChildRight};
+    Number >= Parent -> UnbalancedTree = {{Parent, Height}, ChildLeft, addNode(Number, ChildRight)}
   end,
 
-  erlang:display(UnbalancedTree),
   %% Checking for balance with HeightLeft - HeightRight
   %% Balanced: -1 || 0 || 1
   %% Unbalanced: -2 || 2

@@ -18,7 +18,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Init empty tree
-initTree() ->  {}.
+initTree() -> generateOutputfile:writeDigraph(), {}.
 
 %% Init node with pattern {{Parent, Height}, {ChildLeft, Height}, {ChildRight, Height}}
 initNode() -> {{}, {}, {}}.
@@ -36,16 +36,28 @@ addNode(Number, {}) -> initNode(Number);
 %% Numbers > parent always are settled on right side for initialization
 %% Numbers == parent are ignored
 addNode(Number, {{Parent, Height}, {}, {}}) when Number < Parent ->
-  {{Parent, Height+1}, initNode(Number), {}};
+  Tree = {{Parent, Height+1}, initNode(Number), {}},
+  generateOutputfile:cleanUp(),
+  generateOutputfile:writeToFile(Tree),
+  Tree;
 
-addNode(Number, {{Parent, Height}, {}, {}}) when Number > Parent -> 
-  {{Parent, Height+1}, {}, initNode(Number)};
+addNode(Number, {{Parent, Height}, {}, {}}) when Number > Parent ->
+  Tree = {{Parent, Height+1}, {}, initNode(Number)},
+  generateOutputfile:cleanUp(),
+  generateOutputfile:writeToFile(Tree),
+  Tree;
 
 addNode(Number, {{Parent, Height}, {}, ChildRight}) when Number < Parent ->
-  {{Parent, Height}, initNode(Number), ChildRight};
+  Tree = {{Parent, Height}, initNode(Number), ChildRight},
+  generateOutputfile:cleanUp(),
+  generateOutputfile:writeToFile(Tree),
+  Tree;
 
 addNode(Number, {{Parent, Height}, ChildLeft, {}}) when Number > Parent ->
-  {{Parent, Height}, ChildLeft, initNode(Number)};
+  Tree = {{Parent, Height}, ChildLeft, initNode(Number)},
+  generateOutputfile:cleanUp(),
+  generateOutputfile:writeToFile(Tree),
+  Tree;
 
 addNode(Number, {{Parent, Height}, ChildLeft, ChildRight}) when Number == Parent ->
   {{Parent, Height}, ChildLeft, ChildRight};
@@ -63,7 +75,10 @@ addNode(Number, {{Parent, _}, ChildLeft, ChildRight}) ->
   end,
   
   %% Check balance and rotate if necessary
-  balance(UnbalancedTree).
+  Tree = balance(UnbalancedTree),
+  generateOutputfile:cleanUp(),
+  generateOutputfile:writeToFile(Tree),
+  Tree.
 
 
 

@@ -3,7 +3,7 @@
 -author("AD").
 
 %% API
--export([ writeToFile/1, writeDigraph/0, writeEOF/0, writeSingleToFile/1]).
+-export([ writeToFile/1, writeDigraph/0, writeEOF/0, cleanUp/0]).
 
 %%-import().
 %% logFile() -> "\beispiel.dot".
@@ -15,7 +15,13 @@ logFile() -> "\avl1.dot".
 %% digraph g {
 %%  node [shape = record,height=.1];
 writeDigraph() ->
-  file:write_file(logFile(), io_lib:fwrite("digraph avltree {  \n", []), [append]).
+  file:write_file(logFile(), io_lib:fwrite("digraph avltree {  \n", []), [write]).
+
+
+%% Cleans up the file avl1.dot before
+%% adding a node and rotate the tree
+cleanUp()->
+  writeDigraph().
 
 writeToFile({{_Parent, 1}, _ChildLeft, _ChildRight}) ->
   ok;
@@ -39,21 +45,6 @@ writeToFile({{Parent, _Height}, ChildLeft, ChildRight} ) ->
   writeToFile(ChildLeft),
   writeToFile(ChildRight).
 
-writeSingleToFile(Parent) ->
-  file:write_file(logFile(), io_lib:fwrite("~p  \n",   [Parent]), [append]).
 
 writeEOF() ->
   file:write_file(logFile(), io_lib:fwrite(" } \n", []), [append]).
-
-%% digraph avltree
-%% {
-%% 6 -> 2 [label = 3];
-%% 6 -> 8 [label = 2];
-%% 2 -> 1 [label = 2];
-%% 2 -> 4 [label = 2];
-%% 1 -> 0 [label = 1];
-%% 4 -> 3 [label = 1];
-%% 4 -> 5 [label = 1];
-%% 8 -> 7 [label = 1];
-%% 8 -> 9 [label = 1];
-%% }

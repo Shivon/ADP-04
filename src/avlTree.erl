@@ -31,26 +31,33 @@ initNode(Number) -> {{Number,1}, {}, {}}.
 %% Add node to empty tree
 addNode(Number, {}) -> initNode(Number);
 %% Add node to existing tree
-%% Numbers >= parent always are settled on right side for initialization
+%% Numbers > parent always are settled on right side for initialization
+%% Numbers == parent are ignored
 addNode(Number, {{Parent, Height}, {}, {}}) when Number < Parent ->
   {{Parent, Height+1}, initNode(Number), {}};
 
-addNode(Number, {{Parent, Height}, {}, {}}) when Number >= Parent -> 
+addNode(Number, {{Parent, Height}, {}, {}}) when Number > Parent -> 
   {{Parent, Height+1}, {}, initNode(Number)};
 
 addNode(Number, {{Parent, Height}, {}, ChildRight}) when Number < Parent ->
   {{Parent, Height}, initNode(Number), ChildRight};
 
-addNode(Number, {{Parent, Height}, ChildLeft, {}}) when Number >= Parent ->
+addNode(Number, {{Parent, Height}, ChildLeft, {}}) when Number > Parent ->
   {{Parent, Height}, ChildLeft, initNode(Number)};
 
-%% TODO CHECK if works !!!
-addNode(Number, {{Parent, Height}, ChildLeft, ChildRight}) ->
+addNode(Number, {{Parent, Height}, ChildLeft, ChildRight}) when Number == Parent ->
+  {{Parent, Height}, ChildLeft, ChildRight};
+
+addNode(Number, {{Parent, _}, ChildLeft, ChildRight}) ->
 
   %% Tree maybe comes back unbalanced from recursion
   if
-    Number < Parent -> UnbalancedTree = {{Parent, Height}, addNode(Number, ChildLeft), ChildRight};
-    Number >= Parent -> UnbalancedTree = {{Parent, Height}, ChildLeft, addNode(Number, ChildRight)}
+    Number < Parent -> 
+      NewChildLeft = addNode(Number, ChildLeft),
+      UnbalancedTree = {{Parent, getMaxHeight(NewChildLeft, ChildRight) + 1}, NewChildLeft, ChildRight};
+    Number > Parent -> 
+      NewChildRight = addNode(Number, ChildRight),
+      UnbalancedTree = {{Parent, getMaxHeight(ChildLeft, NewChildRight)}, ChildLeft, NewChildRight}
   end,
 
   %% Checking for balance with HeightLeft - HeightRight
@@ -112,16 +119,16 @@ deleteNode(Number, {{Parent, 2}, ChildLeft, {{Number, 1}, {}, {}}}) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Rotations
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% TODO check if height update works correctly
+
 rotateLeft({{P1, _}, CL1, {{P2, _}, CL2, CR2}}) ->
   %% Update height P1 and P2 (all others remain the same)
-  HeightP1 = erlang:max(getHeight(CL1), getHeight(CL2)) + 1,
+  HeightP1 = getMaxHeight(CL1, CL2) + 1,
   HeightP2 = erlang:max(getHeight(CR2), HeightP1) + 1,
   {{P2, HeightP2}, {{P1, HeightP1}, CL1, CL2}, CR2}.
 
 rotateRight({{P1, _}, {{P2, _}, CL2, CR2}, CR1}) ->
   %% Update height P1 and P2 (all others remain the same)
-  HeightP1 = erlang:max(getHeight(CR1), getHeight(CR2)) + 1,
+  HeightP1 = getMaxHeight(CR1, CR2) + 1,
   HeightP2 = erlang:max(getHeight(CL2), HeightP1) + 1,
   {{P2, HeightP2}, CL2, {{P1, HeightP1}, CR2, CR1}}.
 
@@ -142,6 +149,11 @@ doubleRotateRight({P1, CL1, CR1}) ->
 %% Get height from one specific node
 getHeight({}) -> 0;
 getHeight({{_, H}, _, _}) -> H.
+
+%% Get max. height of the two child nodes
+getMaxHeight({}, {}) -> 0;
+getMaxHeight(ChildLeft, ChildRight) ->
+  erlang:max(getHeight(ChildLeft), getHeight(ChildRight)).
 
 %% Get left or right node from tree
 getNode({_, CL, _}, left) -> CL;

@@ -147,10 +147,10 @@ balance(UnbalancedTree) ->
   %% Unbalanced: -2 || 2
   DiffHeight = getDiffHeight(UnbalancedTree),
   if
-  %% Tree is already balanced
+    %% Tree is already balanced
     (DiffHeight == 0) or (DiffHeight == -1) or (DiffHeight == 1) -> UnbalancedTree;
 
-  %% Tree needs left or doubleLeft rotation
+    %% Tree needs left or doubleLeft rotation
     DiffHeight =< -2 ->
       CurrChildRight = getNode(UnbalancedTree, right),
       DiffHeightRight = getDiffHeight(CurrChildRight),
@@ -159,7 +159,7 @@ balance(UnbalancedTree) ->
         DiffHeightRight > 0 -> doubleRotateLeft(UnbalancedTree)
       end;
 
-  %% Tree needs right or doubleRight rotation
+    %% Tree needs right or doubleRight rotation
     DiffHeight >= 2 ->
       CurrChildLeft = getNode(UnbalancedTree, left),
       DiffHeightLeft = getDiffHeight(CurrChildLeft),

@@ -9,7 +9,7 @@
 -author("KamikazeOnRoad").
 
 %% API
--export([initTree/0, initNode/1, addNode/2, deleteNode/2, getHeight/1, getNode/2, getMinOfChildRight/1]).
+-export([initTree/0, initNode/0, initNode/1, addNode/2, deleteNode/2, getHeight/1, getNode/2, getMinOfChildRight/1]).
 
 
 
@@ -19,7 +19,9 @@
 
 %% Init empty tree
 initTree() ->  {}.
+
 %% Init node with pattern {{Parent, Height}, {ChildLeft, Height}, {ChildRight, Height}}
+initNode() -> {{}, {}, {}}.
 initNode(Number) -> {{Number,1}, {}, {}}.
 
 
@@ -57,35 +59,11 @@ addNode(Number, {{Parent, _}, ChildLeft, ChildRight}) ->
       UnbalancedTree = {{Parent, getMaxHeight(NewChildLeft, ChildRight) + 1}, NewChildLeft, ChildRight};
     Number > Parent -> 
       NewChildRight = addNode(Number, ChildRight),
-      UnbalancedTree = {{Parent, getMaxHeight(ChildLeft, NewChildRight)}, ChildLeft, NewChildRight}
+      UnbalancedTree = {{Parent, getMaxHeight(ChildLeft, NewChildRight) + 1}, ChildLeft, NewChildRight}
   end,
-
-  %% Checking for balance with HeightLeft - HeightRight
-  %% Balanced: -1 || 0 || 1
-  %% Unbalanced: -2 || 2
-  DiffHeight = getDiffHeight(UnbalancedTree),
-  if
-    %% Tree is still balanced
-    (DiffHeight == 0) or (DiffHeight == -1) or (DiffHeight == 1) -> UnbalancedTree;
-    
-    %% Tree needs left or doubleLeft rotation
-    DiffHeight =< -2 ->
-      CurrChildRight = getNode(UnbalancedTree, right),
-      DiffHeightRight = getDiffHeight(CurrChildRight),
-      if
-        DiffHeightRight < 0 -> rotateLeft(UnbalancedTree);
-        DiffHeightRight > 0 -> doubleRotateLeft(UnbalancedTree)
-      end;
-    
-    %% Tree needs right or doubleRight rotation
-    DiffHeight >= 2 ->
-      CurrChildLeft = getNode(UnbalancedTree, left),
-      DiffHeightLeft = getDiffHeight(CurrChildLeft),
-      if
-        DiffHeightLeft > 0 -> rotateRight(UnbalancedTree);
-        DiffHeightLeft < 0 -> doubleRotateRight(UnbalancedTree)
-      end
-  end.
+  
+  %% Check balance and rotate if necessary
+  balance(UnbalancedTree).
 
 
 
@@ -119,6 +97,42 @@ getMinOfChildRight({{Parent, _Height}, {}, _ChildRight}) ->
 
 getMinOfChildRight({_Parent, ChildLeft, _ChildRight}) ->
   getMinOfChildRight(ChildLeft).
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Balancing
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+balance(UnbalancedTree) ->
+  %% Checking for balance with HeightLeft - HeightRight
+  %% Balanced: -1 || 0 || 1
+  %% Unbalanced: -2 || 2
+  DiffHeight = getDiffHeight(UnbalancedTree),
+  if
+  %% Tree is already balanced
+    (DiffHeight == 0) or (DiffHeight == -1) or (DiffHeight == 1) -> UnbalancedTree;
+
+  %% Tree needs left or doubleLeft rotation
+    DiffHeight =< -2 ->
+      CurrChildRight = getNode(UnbalancedTree, right),
+      DiffHeightRight = getDiffHeight(CurrChildRight),
+      if
+        DiffHeightRight < 0 -> rotateLeft(UnbalancedTree);
+        DiffHeightRight > 0 -> doubleRotateLeft(UnbalancedTree)
+      end;
+
+  %% Tree needs right or doubleRight rotation
+    DiffHeight >= 2 ->
+      CurrChildLeft = getNode(UnbalancedTree, left),
+      DiffHeightLeft = getDiffHeight(CurrChildLeft),
+      if
+        DiffHeightLeft > 0 -> rotateRight(UnbalancedTree);
+        DiffHeightLeft < 0 -> doubleRotateRight(UnbalancedTree)
+      end
+  end.
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Rotations

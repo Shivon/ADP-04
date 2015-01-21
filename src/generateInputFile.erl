@@ -32,9 +32,7 @@ generateDeleteList(Quantity) ->
   
   InputList = util:zahlenfolgeRT("\zahlen.dat"),
   InputArray = util:zTa(InputList),
-  %% random:uniform(N) -> generates random int between 1 and N
-  RandomIndex = random:uniform(arrayS:lengthA(InputArray) - 1),
-  RandomElem = arrayS:getA(InputArray, RandomIndex),
+  RandomElem = myUtil:pickRandomElem(InputArray),
   
   if
     LengthOutput == Quantity-1 -> arrayS:setA(Output, Quantity-1, RandomElem);

@@ -9,7 +9,7 @@
 -author("KamikazeOnRoad").
 
 %% API
--export([initTree/0, initNode/0, initNode/1, addNode/2, deleteNode/2, getHeight/1, getNode/2, getMinOfChildRight/1]).
+-export([initTree/0, initNode/0, initNode/1, addNode/2, deleteNode/2, getHeight/1, getNode/2, getMinimum/1, getMaximum/1]).
 
 
 
@@ -71,32 +71,54 @@ addNode(Number, {{Parent, _}, ChildLeft, ChildRight}) ->
 %% Delete nodes
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Delete node when only node itself is in tree
+%% Delete node when it is a leaf
 deleteNode(Number, {{Number, 1}, {}, {}}) -> {};
 
-%% Delete node when node is only child
-deleteNode(Number, {{Parent, 2}, {{Number, 1}, {}, {}}, {}}) ->
-  {{Parent, 1}, {}, {}};
-deleteNode(Number, {{Parent, 2}, {}, {{Number, 1}, {}, {}}}) ->
-  {{Parent, 1}, {}, {}};
+%% Delete node when it only has sub-tree on left side
+deleteNode(Number, {{Number, _}, ChildLeft, {}}) ->
+  %% Find and delete max value in ChildLeft
+  MaximumLeft = getMaximum(ChildLeft),
+  NewChildLeft = deleteNode(MaximumLeft, ChildLeft),
+  
+  %% Generate new tree and balance it
+  UnbalancedTree = {{MaximumLeft, getHeight(NewChildLeft) + 1}, NewChildLeft, {}},
+  balance(UnbalancedTree);
 
-%% Delete node when node is one of the only two leaves  
+%% Delete node when it only has sub-tree on right side
+deleteNode(Number, {{Number, _}, {}, ChildRight}) ->
+  %% Find and delete min value in ChildRight
+  MinimumRight = getMinimum(ChildRight),
+  NewChildRight = deleteNode(MinimumRight, ChildRight),
 
-%% TODO unnötige Fallunterscheidung, abstrahieren!! 3 fälle (blatt, halbwurzel, wurzel)
-%% suchen und finden vllt besser trennen
-%% beim runterlaufen für Min/ Max kopieren und ggf direkt löschen:
-%% 2 möglichkeiten hier: blatt oder halbwurzel
-deleteNode(Number, {{Parent, 2}, {{Number, 1}, {}, {}}, ChildRight}) ->
-  {{Parent, 2}, {}, ChildRight};
-deleteNode(Number, {{Parent, 2}, ChildLeft, {{Number, 1}, {}, {}}}) ->
-  {{Parent, 2}, ChildLeft, {}}.
-%% TODO delete nodes and balance when deeper AND when root or similar is going to be deleted
+  %% Generate new tree and balance it
+  UnbalancedTree = {{MinimumRight, getHeight(NewChildRight) + 1}, {}, NewChildRight},
+  balance(UnbalancedTree);
+  
+%% Delete node when it has sub-trees on both sides
+deleteNode(Number, {{Number, _}, ChildLeft, ChildRight}) ->
+  %% Find and delete min value in ChildRight
+  MinimumRight = getMinimum(ChildRight),
+  NewChildRight = deleteNode(MinimumRight, ChildRight),
 
-getMinOfChildRight({{Parent, _Height}, {}, _ChildRight}) ->
-  Parent;
+  %% Generate new tree and balance it
+  UnbalancedTree = {{MinimumRight, getMaxHeight(ChildLeft, NewChildRight) + 1}, ChildLeft, NewChildRight},
+  balance(UnbalancedTree);
 
-getMinOfChildRight({_Parent, ChildLeft, _ChildRight}) ->
-  getMinOfChildRight(ChildLeft).
+%% Delete node when it is smaller than root of tree
+deleteNode(Number, {{Parent, _}, ChildLeft, ChildRight}) when Number < Parent ->
+  NewChildLeft = deleteNode(Number, ChildLeft),
+  UnbalancedTree = {{Parent, getMaxHeight(NewChildLeft, ChildRight) + 1}, NewChildLeft, ChildRight},
+  balance(UnbalancedTree);
+
+%% Delete node when it is bigger than root of tree
+deleteNode(Number, {{Parent, _}, ChildLeft, ChildRight}) when Number > Parent ->
+  NewChildRight = deleteNode(Number, ChildRight),
+  UnbalancedTree = {{Parent, getMaxHeight(ChildLeft, NewChildRight) + 1}, ChildLeft, NewChildRight},
+  balance(UnbalancedTree);
+
+%% Node is not in tree, tree gets returned
+deleteNode(_, Tree) ->
+  Tree.
 
 
 
@@ -168,14 +190,17 @@ doubleRotateRight({P1, CL1, CR1}) ->
 getHeight({}) -> 0;
 getHeight({{_, H}, _, _}) -> H.
 
+
 %% Get max. height of the two child nodes
 getMaxHeight({}, {}) -> 0;
 getMaxHeight(ChildLeft, ChildRight) ->
   erlang:max(getHeight(ChildLeft), getHeight(ChildRight)).
 
+
 %% Get left or right node from tree
 getNode({_, CL, _}, left) -> CL;
 getNode({_, _, CR}, right) -> CR.
+
 
 %% Get difference in height for balance
 getDiffHeight({}) -> 0;
@@ -184,3 +209,23 @@ getDiffHeight(Tree) ->
   %% Balanced: -1 || 0 || 1
   %% Unbalanced: -2 || 2
   getHeight(getNode(Tree, left)) - getHeight(getNode(Tree, right)).
+
+
+%% Find minimum value in tree
+%% No sub-tree on left side of parent => parent already minimum
+getMinimum({{Parent, _Height}, {}, _ChildRight}) ->
+  Parent;
+
+%% Still sub-tree on left side of parent => parent not minimum
+getMinimum({_Parent, ChildLeft, _ChildRight}) ->
+  getMinimum(ChildLeft).
+
+
+%% Find maximum value in tree
+%% No sub-tree on right side of parent => parent already maximum
+getMaximum({{Parent, _Height}, _ChildLeft, {}}) ->
+  Parent;
+
+%% Still sub-tree on right side of parent => parent not maximum
+getMaximum({_Parent, _ChildLeft, ChildRight}) ->
+  getMaximum(ChildRight).
